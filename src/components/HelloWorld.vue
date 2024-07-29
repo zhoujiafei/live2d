@@ -1,58 +1,44 @@
 <template>
-  <div class="hello">
-    <h1>{{ msg }}</h1>
-    <p>
-      For a guide and recipes on how to configure / customize this project,<br>
-      check out the
-      <a href="https://cli.vuejs.org" target="_blank" rel="noopener">vue-cli documentation</a>.
-    </p>
-    <h3>Installed CLI Plugins</h3>
-    <ul>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel" target="_blank" rel="noopener">babel</a></li>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-eslint" target="_blank" rel="noopener">eslint</a></li>
-    </ul>
-    <h3>Essential Links</h3>
-    <ul>
-      <li><a href="https://vuejs.org" target="_blank" rel="noopener">Core Docs</a></li>
-      <li><a href="https://forum.vuejs.org" target="_blank" rel="noopener">Forum</a></li>
-      <li><a href="https://chat.vuejs.org" target="_blank" rel="noopener">Community Chat</a></li>
-      <li><a href="https://twitter.com/vuejs" target="_blank" rel="noopener">Twitter</a></li>
-      <li><a href="https://news.vuejs.org" target="_blank" rel="noopener">News</a></li>
-    </ul>
-    <h3>Ecosystem</h3>
-    <ul>
-      <li><a href="https://router.vuejs.org" target="_blank" rel="noopener">vue-router</a></li>
-      <li><a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a></li>
-      <li><a href="https://github.com/vuejs/vue-devtools#vue-devtools" target="_blank" rel="noopener">vue-devtools</a></li>
-      <li><a href="https://vue-loader.vuejs.org" target="_blank" rel="noopener">vue-loader</a></li>
-      <li><a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">awesome-vue</a></li>
-    </ul>
-  </div>
+  <canvas ref="liveCanvas" style="width: 100%; height: 100%"></canvas>
 </template>
 
 <script>
+import * as PIXI from "pixi.js";
+import { Live2DModel } from "pixi-live2d-display/cubism4";
+
+window.PIXI = PIXI; // 为了pixi-live2d-display内部调用
+
+let app; // 为了存储pixi实例
+let model; // 为了存储live2d实例
+
 export default {
-  name: 'HelloWorld',
   props: {
-    msg: String
-  }
-}
+    msg: String,
+  },
+  async mounted() {
+    app = new PIXI.Application({
+      view: this.$refs.liveCanvas,
+      autoStart: true,
+      resizeTo: window,
+      backgroundAlpha: 0,
+    });
+    // 打包后live2d资源会出现在dist/下，这里用相对路径就能引用到了
+    model = await Live2DModel.from(
+      "https://cdn.jsdelivr.net/gh/Eikanya/Live2d-model/Live2D/Senko_Normals/senko.model3.json"
+    );
+    app.stage.addChild(model);
+    model.scale.set(0.3); // 调整缩放比例，一般原始资源尺寸非常大，需要缩小
+    // 点击live2d人物不同部位时的回调，只有定义了可点击区域的人物才会收到回调
+    model.on("hit", (hitAreas) => {
+      // hitAreas 包含点击的区域和鼠标坐标
+      console.log(hitAreas);
+    });
+  },
+  beforeUnmount() {
+    model?.destroy();
+    app?.destroy();
+  },
+};
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
-h3 {
-  margin: 40px 0 0;
-}
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
-}
-</style>
+<style scoped></style>
